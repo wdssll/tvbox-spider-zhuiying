@@ -11,6 +11,8 @@
 | `zhuiying` | **追影影视** | [zhuiying3.cc](https://zhuiying3.cc) | `gaze.js` | 防盗链 MD5 验签与 Base64 解密，直接提取极速直连 m3u8 |
 | `nivod` | **泥视频** | [www.nivod.vip](https://www.nivod.vip) | `nivod.js` | 7 条独立播放线路，全部输出原画/超清直链 m3u8，免 VIP 解析秒开 |
 | `aidianying` | **爱电影** | [kuhh4jo.com](https://kuhh4jo.com) | `aidianying.js` | SHA1(MD5()) 双重验签直连 RESTful API，腾讯云 EdgeOne 蓝光/超清直链免密秒开 |
+| `xueluo` | **雪落影视** | [v.xl01.eu.cc](https://v.xl01.eu.cc) | `xueluo.js` | 内置纯 JS AES-128-ECB 动态验签，提取 4GB+ 1080P/4K 高清 MP4/CDN 原画直链 |
+| `jinpai` | **金牌影院** | [vv3nwjk.com](https://vv3nwjk.com) | `jinpai.js` | 蓝光原画专线，SHA1(MD5()) 签名直链输出 1080P/720P 多码率 m3u8 |
 
 ---
 
