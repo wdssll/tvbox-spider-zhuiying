@@ -35,8 +35,21 @@ https://raw.githubusercontent.com/wdssll/tvbox-spider-zhuiying/main/config.json
 
 #### jsDelivr CDN 加速地址（国内访问推荐）：
 ```text
-https://fastly.jsdelivr.net/gh/wdssll/tvbox-spider-zhuiying@main/config.json
+https://cdn.jsdelivr.net/gh/wdssll/tvbox-spider-zhuiying@main/config.json
 ```
+*(若遇到 CDN 缓存未及时更新，可在链接末尾加上版本号，例如 `.../config.json?v=2`)*
+
+---
+
+### 如何在 TVBox 中切换站点源与刷新配置
+
+1. **刷新配置（清除本地缓存）**：
+   - 进入 TVBox **【设置】** -> 点击 **【配置地址】** -> 无需修改直接点击 **【确定】**，强制 TVBox 重新向服务器拉取最新配置。
+2. **切换站点到「片库影视」**：
+   - TVBox 首页默认只显示单个站点的影视流（默认排在第一个的「追影影视」）。
+   - 在 TVBox 首页上方点击站点名称（当前显示的 **【追影影视】** 或 **【首页】** 按钮），即可弹出 **【换源 / 站点选择】** 列表，在列表中选中 **【片库影视】** 即可切换。
+   - 也可以在 **【设置】** -> **【首页数据源】/【默认主页】** 中直接选择 **片库影视**。
+
 
 ---
 
