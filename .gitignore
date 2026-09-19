@@ -1,0 +1,28 @@
+# Debug and sample files
+*.html
+*.log
+*.bin
+play_sample*
+filter_*
+zhuiying_*
+raw_*
+cap.js
+pedantic_tradition.js
+play-mG9fS57U.js
+index_sample.js
+
+# Test scripts & scratch directory
+scratch/
+test_*.mjs
+verify_*.mjs
+
+# OS files
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# Secrets & Credentials
+github_config.txt
+*config.txt
+*.token
+*.key
