@@ -16,6 +16,34 @@
         "短剧"
       ],
       "ext": "https://zhuiying3.cc"
+    },
+    {
+      "key": "pianku",
+      "name": "片库影视",
+      "type": 3,
+      "api": "./pianku.js",
+      "searchable": 1,
+      "quickSearch": 1,
+      "filterable": 1,
+      "categories": [
+        "电影",
+        "剧集",
+        "动漫",
+        "综艺"
+      ],
+      "ext": "https://4k01.pianku.online"
+    }
+  ],
+  "parses": [
+    {
+      "name": "聚合解析",
+      "type": 0,
+      "url": "https://jx.jsonplayer.com/player/?url="
+    },
+    {
+      "name": "通用解析",
+      "type": 0,
+      "url": "https://jx.xmflv.com/?url="
     }
   ]
 }
