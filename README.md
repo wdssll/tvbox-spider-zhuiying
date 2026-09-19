@@ -10,6 +10,7 @@
 | :--- | :--- | :--- | :--- | :--- |
 | `zhuiying` | **追影影视** | [zhuiying3.cc](https://zhuiying3.cc) | `gaze.js` | 防盗链 MD5 验签与 Base64 解密，直接提取极速直连 m3u8 |
 | `pianku` | **片库影视** | [4k01.pianku.online](https://4k01.pianku.online) | `pianku.js` | 4K60 帧极速源直连播放，官方源自动切换 VIP 解析，支持子分类筛选 |
+| `nivod` | **泥视频** | [www.nivod.vip](https://www.nivod.vip) | `nivod.js` | 7 条独立播放线路，全部输出原画/超清直链 m3u8，免 VIP 解析秒开 |
 
 ---
 
@@ -17,8 +18,8 @@
 
 - **纯原生 QuickJS ES 模块**：同步执行设计，零外部 npm 依赖，完美兼容 Android TVBox / FongMi 影视TV。
 - **全生命周期钩子支持**：`init`, `home`, `homeVod`, `category`, `detail`, `play`, `search` 及各种 TVBox 兼容别名。
-- **多维度筛选**：支持按类型、剧情子分类、地区、年份、排序等实时过滤。
-- **智能播放线路分流**：直链源（如自营 4K60 帧、自建 CDN）直接走 `parse: 0`；官方 VIP 线路（腾讯、优酷、爱奇艺、芒果）自动标记 `parse: 1` 联动聚合解析。
+- **多维度筛选与分页**：电影、电视剧/剧集、动漫、综艺等完整分类与无限滚动分页。
+- **智能播放流分流**：直链源（如泥视频多线路、自营 4K60 帧、自建 CDN）直接走 `parse: 0`；官方 VIP 线路（腾讯、优酷、爱奇艺、芒果）自动标记 `parse: 1` 联动聚合解析。
 
 ---
 
@@ -37,7 +38,7 @@ https://raw.githubusercontent.com/wdssll/tvbox-spider-zhuiying/main/config.json
 ```text
 https://cdn.jsdelivr.net/gh/wdssll/tvbox-spider-zhuiying@main/config.json
 ```
-*(若遇到 CDN 缓存未及时更新，可在链接末尾加上版本号，例如 `.../config.json?v=2`)*
+*(若遇到 CDN 缓存未及时更新，可在链接末尾加上版本号强制刷新，例如 `.../config.json?v=3`)*
 
 ---
 
@@ -45,11 +46,10 @@ https://cdn.jsdelivr.net/gh/wdssll/tvbox-spider-zhuiying@main/config.json
 
 1. **刷新配置（清除本地缓存）**：
    - 进入 TVBox **【设置】** -> 点击 **【配置地址】** -> 无需修改直接点击 **【确定】**，强制 TVBox 重新向服务器拉取最新配置。
-2. **切换站点到「片库影视」**：
+2. **切换站点源**：
    - TVBox 首页默认只显示单个站点的影视流（默认排在第一个的「追影影视」）。
-   - 在 TVBox 首页上方点击站点名称（当前显示的 **【追影影视】** 或 **【首页】** 按钮），即可弹出 **【换源 / 站点选择】** 列表，在列表中选中 **【片库影视】** 即可切换。
-   - 也可以在 **【设置】** -> **【首页数据源】/【默认主页】** 中直接选择 **片库影视**。
-
+   - 在 TVBox 首页上方点击站点名称（当前显示的 **【追影影视】** 或 **【首页】** 按钮），即可弹出 **【换源 / 站点选择】** 列表，在列表中选中 **【片库影视】** 或 **【泥视频】** 即可切换。
+   - 也可以在 **【设置】** -> **【首页数据源】/【默认主页】** 中直接选择对应站点。
 
 ---
 
@@ -92,6 +92,22 @@ https://cdn.jsdelivr.net/gh/wdssll/tvbox-spider-zhuiying@main/config.json
         "综艺"
       ],
       "ext": "https://4k01.pianku.online"
+    },
+    {
+      "key": "nivod",
+      "name": "泥视频",
+      "type": 3,
+      "api": "https://fastly.jsdelivr.net/gh/wdssll/tvbox-spider-zhuiying@main/nivod.js",
+      "searchable": 1,
+      "quickSearch": 1,
+      "filterable": 0,
+      "categories": [
+        "电影",
+        "剧集",
+        "综艺",
+        "动漫"
+      ],
+      "ext": "https://www.nivod.vip"
     }
   ]
 }
@@ -103,5 +119,6 @@ https://cdn.jsdelivr.net/gh/wdssll/tvbox-spider-zhuiying@main/config.json
 
 - `gaze.js`：追影影视 QuickJS 爬虫脚本。
 - `pianku.js`：片库影视 QuickJS 爬虫脚本。
+- `nivod.js`：泥视频 QuickJS 爬虫脚本。
 - `config.json`：多源配置文件（包含默认聚合解析器）。
 - `server.mjs`：本地局域网测试服务。
