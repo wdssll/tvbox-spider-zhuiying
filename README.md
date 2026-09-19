@@ -10,6 +10,7 @@
 | :--- | :--- | :--- | :--- | :--- |
 | `zhuiying` | **追影影视** | [zhuiying3.cc](https://zhuiying3.cc) | `gaze.js` | 防盗链 MD5 验签与 Base64 解密，直接提取极速直连 m3u8 |
 | `nivod` | **泥视频** | [www.nivod.vip](https://www.nivod.vip) | `nivod.js` | 7 条独立播放线路，全部输出原画/超清直链 m3u8，免 VIP 解析秒开 |
+| `aidianying` | **爱电影** | [kuhh4jo.com](https://kuhh4jo.com) | `aidianying.js` | SHA1(MD5()) 双重验签直连 RESTful API，腾讯云 EdgeOne 蓝光/超清直链免密秒开 |
 
 ---
 
@@ -17,8 +18,8 @@
 
 - **纯原生 QuickJS ES 模块**：同步执行设计，零外部 npm 依赖，完美兼容 Android TVBox / FongMi 影视TV。
 - **全生命周期钩子支持**：`init`, `home`, `homeVod`, `category`, `detail`, `play`, `search` 及各种 TVBox 兼容别名。
-- **多维度筛选与分页**：电影、电视剧/剧集、动漫、综艺等完整分类与无限滚动分页。
-- **智能播放流分流**：直链源（如泥视频多线路、自建 CDN）直接走 `parse: 0`；官方 VIP 线路自动标记 `parse: 1` 联动聚合解析。
+- **多维度筛选与分页**：电影、电视剧/剧集、动漫、综艺、短剧等完整分类与无限滚动分页。
+- **智能播放流分流**：直链源（泥视频、爱电影、追影自建 CDN）直接走 `parse: 0`；官方 VIP 线路自动标记 `parse: 1` 联动聚合解析。
 
 ---
 
@@ -37,7 +38,7 @@ https://raw.githubusercontent.com/wdssll/tvbox-spider-zhuiying/main/config.json
 ```text
 https://cdn.jsdelivr.net/gh/wdssll/tvbox-spider-zhuiying@main/config.json
 ```
-*(若遇到 CDN 缓存未及时更新，可在链接末尾加上版本号强制刷新，例如 `.../config.json?v=4`)*
+*(若遇到 CDN 缓存未及时更新，可在链接末尾加上版本号强制刷新，例如 `.../config.json?v=5`)*
 
 ---
 
@@ -47,7 +48,7 @@ https://cdn.jsdelivr.net/gh/wdssll/tvbox-spider-zhuiying@main/config.json
    - 进入 TVBox **【设置】** -> 点击 **【配置地址】** -> 无需修改直接点击 **【确定】**，强制 TVBox 重新向服务器拉取最新配置。
 2. **切换站点源**：
    - TVBox 首页默认只显示单个站点的影视流（默认排在第一个的「追影影视」）。
-   - 在 TVBox 首页上方点击站点名称（当前显示的 **【追影影视】** 或 **【首页】** 按钮），即可弹出 **【换源 / 站点选择】** 列表，在列表中选中 **【泥视频】** 即可切换。
+   - 在 TVBox 首页上方点击站点名称（当前显示的 **【追影影视】** 或 **【首页】** 按钮），即可弹出 **【换源 / 站点选择】** 列表，在列表中选中 **【泥视频】** 或 **【爱电影】** 即可切换。
    - 也可以在 **【设置】** -> **【首页数据源】/【默认主页】** 中直接选择对应站点。
 
 ---
@@ -91,6 +92,23 @@ https://cdn.jsdelivr.net/gh/wdssll/tvbox-spider-zhuiying@main/config.json
         "动漫"
       ],
       "ext": "https://www.nivod.vip"
+    },
+    {
+      "key": "aidianying",
+      "name": "爱电影",
+      "type": 3,
+      "api": "https://cdn.jsdelivr.net/gh/wdssll/tvbox-spider-zhuiying@main/aidianying.js",
+      "searchable": 1,
+      "quickSearch": 1,
+      "filterable": 0,
+      "categories": [
+        "电影",
+        "电视剧",
+        "综艺",
+        "动漫",
+        "短剧"
+      ],
+      "ext": "https://kuhh4jo.com"
     }
   ]
 }
@@ -102,5 +120,6 @@ https://cdn.jsdelivr.net/gh/wdssll/tvbox-spider-zhuiying@main/config.json
 
 - `gaze.js`：追影影视 QuickJS 爬虫脚本。
 - `nivod.js`：泥视频 QuickJS 爬虫脚本。
+- `aidianying.js`：爱电影 QuickJS 爬虫脚本。
 - `config.json`：多源配置文件（包含默认聚合解析器）。
 - `server.mjs`：本地局域网测试服务。
