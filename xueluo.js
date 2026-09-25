@@ -1,5 +1,5 @@
 /**
- * FongMi / TVBox QuickJS Spider for 雪落影视 (v.xl01.eu.cc)
+ * FongMi / TVBox QuickJS Spider for 雪落影视 (v.xl01.cc.ua)
  * Type: 3 (QuickJS ES Module)
  * All lifecycle methods return synchronous JSON-stringified results.
  */
@@ -11,7 +11,7 @@ var CryptoJS;
 CryptoJS = (typeof globalThis !== 'undefined' && globalThis.CryptoJS) ? globalThis.CryptoJS : (typeof window !== 'undefined' && window.CryptoJS) ? window.CryptoJS : CryptoJS;
 })();
 
-var siteHost = 'https://v.xl01.eu.cc';
+var siteHost = 'https://v.xl01.cc.ua';
 var DEFAULT_UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
 
 // Universal HTTP helper (Synchronous in QuickJS, fallback support)
@@ -362,7 +362,7 @@ function play(flag, id, flags) {
                 if (!streamUrl && data.data.m3u8) {
                     var m3u8Url = data.data.m3u8.split('#')[0].trim();
                     if (m3u8Url.indexOf('bde4.cc') !== -1) {
-                        m3u8Url = m3u8Url.replace('www.bde4.cc', 'v.xl01.eu.cc');
+                        m3u8Url = m3u8Url.replace('www.bde4.cc', siteHost.replace(/^https?:\/\//, ''));
                     }
                     if (m3u8Url) {
                         streamUrl = m3u8Url;

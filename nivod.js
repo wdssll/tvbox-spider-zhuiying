@@ -1,10 +1,10 @@
 /**
- * FongMi / TVBox QuickJS Spider for 泥视频 (www.nivod.vip)
+ * FongMi / TVBox QuickJS Spider for 泥视频 (www.nivod.cc)
  * Type: 3 (QuickJS ES Module)
  * All lifecycle methods return synchronous JSON-stringified results.
  */
 
-var siteHost = 'https://www.nivod.vip';
+var siteHost = 'https://www.nivod.cc';
 var DEFAULT_UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
 
 // Universal HTTP helper (Synchronous in QuickJS, fallback support)
@@ -69,57 +69,60 @@ function httpReq(url, opt) {
     return '';
 }
 
-// Helper: parse video cards from HTML listings
+// Helper: parse video cards from HTML listings (filter.html and search.html)
 function parseCardList(html) {
     if (!html) return [];
     var list = [];
-    var aRegex = /<a[^>]+href=["'](\/nivod\/(\d+)\/?)["'][^>]*>([\s\S]*?)<\/a>/gi;
-    var m;
     var seen = {};
 
-    while ((m = aRegex.exec(html)) !== null) {
-        var id = m[2];
-        if (seen[id]) continue;
+    var liRegex = /class=["'][^"']*qy-mod-li[^"']*["']([\s\S]*?)<\/li>/gi;
+    var m;
+    while ((m = liRegex.exec(html)) !== null) {
+        var card = m[1];
+        var linkMatch = card.match(/href=["']\/voddetail\/(\d+)["']/);
+        var titleMatch = card.match(/class=["'][^"']*link-txt[^"']*["'][^>]*title=["']([^"']+)["']/i) ||
+                         card.match(/title=["']([^"']+)["']/i);
+        var remarkMatch = card.match(/class=["'][^"']*qy-mod-label[^"']*["'][^>]*>([\s\S]*?)<\/span>/i);
 
-        var fullATag = m[0];
-        var inner = m[3];
-
-        var titleMatch = fullATag.match(/title=["']([^"']+)["']/i) ||
-                         inner.match(/<img[^>]+alt=["']([^"']+)["']/i) ||
-                         inner.match(/class=["'][^"']*title[^"']*["'][^>]*>([^<]+)<\//i);
-
-        var picMatch = inner.match(/data-original=["']([^"']+)["']/i) ||
-                         inner.match(/src=["']([^"']+)["']/i);
-
-        var remarkMatch = inner.match(/class=["'][^"']*module-item-note[^"']*["'][^>]*>([^<]+)<\//i) ||
-                          inner.match(/class=["'][^"']*note[^"']*["'][^>]*>([^<]+)<\//i) ||
-                          inner.match(/class=["'][^"']*remarks[^"']*["'][^>]*>([^<]+)<\//i);
-
-        if (titleMatch) {
-            var pic = picMatch ? picMatch[1].trim() : '';
-            if (pic.indexOf('//') === 0) {
-                pic = 'https:' + pic;
-            } else if (pic.indexOf('/') === 0 && pic.indexOf('loading.png') === -1) {
-                pic = siteHost + pic;
+        if (linkMatch && titleMatch) {
+            var id = linkMatch[1];
+            if (!seen[id]) {
+                seen[id] = true;
+                list.push({
+                    vod_id: id,
+                    vod_name: titleMatch[1].trim(),
+                    vod_pic: siteHost + '/imgs/small/' + id + '.jpg',
+                    vod_remarks: remarkMatch ? remarkMatch[1].replace(/<[^>]+>/g, '').trim() : ''
+                });
             }
-
-            seen[id] = true;
-            list.push({
-                vod_id: id,
-                vod_name: titleMatch[1].trim(),
-                vod_pic: pic,
-                vod_remarks: remarkMatch ? remarkMatch[1].trim() : ''
-            });
         }
     }
+
+    // Fallback if no li tags matched
+    if (list.length === 0) {
+        var linkRegex = /<a[^>]+href=["']\/voddetail\/(\d+)["'][^>]*title=["']([^"']+)["']/gi;
+        while ((m = linkRegex.exec(html)) !== null) {
+            var fId = m[1];
+            if (!seen[fId]) {
+                seen[fId] = true;
+                list.push({
+                    vod_id: fId,
+                    vod_name: m[2].trim(),
+                    vod_pic: siteHost + '/imgs/small/' + fId + '.jpg',
+                    vod_remarks: ''
+                });
+            }
+        }
+    }
+
     return list;
 }
 
 var categoryClasses = [
-    { type_id: '1', type_name: '电影' },
-    { type_id: '2', type_name: '剧集' },
-    { type_id: '3', type_name: '综艺' },
-    { type_id: '4', type_name: '动漫' }
+    { type_id: 'movie', type_name: '电影' },
+    { type_id: 'tv', type_name: '电视剧' },
+    { type_id: 'show', type_name: '综艺' },
+    { type_id: 'anime', type_name: '动漫' }
 ];
 
 /**
@@ -153,7 +156,9 @@ function home(filter) {
  * Lifecycle: homeVod
  */
 function homeVod() {
-    var html = httpReq(siteHost + '/');
+    var html = httpReq(siteHost + '/filter.html?channel=movie&page=1', {
+        headers: { 'User-Agent': DEFAULT_UA, 'Referer': siteHost + '/' }
+    });
     var list = parseCardList(html);
     return JSON.stringify({
         list: list
@@ -165,11 +170,20 @@ function homeVod() {
  */
 function category(tid, pg, filter, extend) {
     pg = parseInt(pg, 10) || 1;
-    var targetUrl = siteHost + '/t/' + tid + '-' + pg + '/';
-    var html = httpReq(targetUrl);
+    var channel = tid || 'movie';
+    // Fallback for numeric IDs from previous config
+    if (channel === '1') channel = 'movie';
+    else if (channel === '2') channel = 'tv';
+    else if (channel === '3') channel = 'show';
+    else if (channel === '4') channel = 'anime';
+
+    var url = siteHost + '/filter.html?channel=' + channel + '&page=' + pg;
+    var html = httpReq(url, {
+        headers: { 'User-Agent': DEFAULT_UA, 'Referer': siteHost + '/' }
+    });
     var list = parseCardList(html);
 
-    var hasMore = list.length >= 20;
+    var hasMore = list.length >= 24;
     var pageCount = hasMore ? (pg + 1) : pg;
 
     return JSON.stringify({
@@ -186,111 +200,61 @@ function category(tid, pg, filter, extend) {
  */
 function detail(id) {
     var cleanId = ('' + id).replace(/[^0-9]/g, '');
-    var detailUrl = siteHost + '/nivod/' + cleanId + '/';
-    var html = httpReq(detailUrl);
+    var detailUrl = siteHost + '/voddetail/' + cleanId;
+    var html = httpReq(detailUrl, {
+        headers: { 'User-Agent': DEFAULT_UA, 'Referer': siteHost + '/' }
+    });
+
     if (!html) {
         return JSON.stringify({ list: [] });
     }
 
-    var titleMatch = html.match(/<h1[^>]*class=["'][^"']*page-title[^"']*["'][^>]*>([\s\S]*?)<\/h1>/i) ||
-                     html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i) ||
-                     html.match(/<title>([^<_\-]+)/i);
-    var vodName = titleMatch ? titleMatch[1].replace(/<[^>]+>/g, '').trim() : '';
+    var titleMatch = html.match(/<title>([^<_]+)/i);
+    var vodName = titleMatch ? titleMatch[1].trim() : ('影片' + cleanId);
 
-    var picMatch = html.match(/data-original=["']([^"']+)["']/i) ||
-                   html.match(/class=["'][^"']*module-item-pic[^"']*["'][\s\S]*?<img[^>]+src=["']([^"']+)["']/i);
-    var vodPic = picMatch ? picMatch[1].trim() : '';
-    if (vodPic.indexOf('//') === 0) {
-        vodPic = 'https:' + vodPic;
-    } else if (vodPic.indexOf('/') === 0 && vodPic.indexOf('loading.png') === -1) {
-        vodPic = siteHost + vodPic;
-    }
+    var kwMatch = html.match(/<meta[^>]+name=["']keywords["'][^>]+content=["']([^"']+)["']/i);
+    var kw = kwMatch ? kwMatch[1].split(',') : [];
+    var year = kw[1] || '';
+    var area = kw[3] ? kw[3].split('-')[0].trim() : '';
 
-    var directorMatch = html.match(/导演[：:]\s*([\s\S]*?)<\/div>/i);
-    var actorMatch = html.match(/主演[：:]\s*([\s\S]*?)<\/div>/i);
-    var areaMatch = html.match(/地区[：:]\s*([\s\S]*?)<\/div>/i);
-    var yearMatch = html.match(/上映[：:]\s*([\s\S]*?)<\/div>/i) || html.match(/年份[：:]\s*([\s\S]*?)<\/div>/i);
-    var remarkMatch = html.match(/集数[：:]\s*([\s\S]*?)<\/div>/i) || html.match(/更新[：:]\s*([\s\S]*?)<\/div>/i);
-    var descMatch = html.match(/class=["'][^"']*module-info-items[^"']*["']>([\s\S]*?)<\/div>/i) ||
-                    html.match(/class=["'][^"']*module-info-introduction[^"']*["'][\s\S]*?<p[^>]*>([\s\S]*?)<\/p>/i);
+    var descMatch = html.match(/<meta[^>]+name=["']description["'][^>]+content=["']([^"']+)["']/i);
+    var desc = descMatch ? descMatch[1].trim() : '';
 
-    var cleanText = function(m) {
-        return m ? m[1].replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim() : '';
-    };
-
-    // Extract tabs
-    var tabRegex = /class=["'][^"']*module-tab-item[^"']*["'][^>]*>([\s\S]*?)<\/div>/gi;
-    var allTabs = [];
-    var tm;
-    while ((tm = tabRegex.exec(html)) !== null) {
-        var tName = tm[1].replace(/<[^>]+>/g, '').trim();
-        if (tName && tName !== '选择播放源') {
-            allTabs.push(tName);
-        }
-    }
-
-    // Extract playlists
-    var playListContainers = [];
-    var pRegex = /class=["'][^"']*module-play-list[^"']*["']([\s\S]*?)<\/div>\s*<\/div>/gi;
-    var pm;
-    while ((pm = pRegex.exec(html)) !== null) {
-        playListContainers.push(pm[1]);
-    }
-
-    var fromList = [];
-    var playUrlList = [];
-
-    for (var i = 0; i < playListContainers.length; i++) {
-        var container = playListContainers[i];
-        var tabTitle = allTabs[i] || ('播放线路' + (i + 1));
-
-        var epRegex = /<a[^>]+href=["'](\/niplay\/[^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi;
-        var epMatch;
-        var episodes = [];
-
-        while ((epMatch = epRegex.exec(container)) !== null) {
-            var epHref = epMatch[1];
-            var epName = epMatch[2].replace(/<[^>]+>/g, '').trim();
-            if (!epName) {
-                var nameMatch = epMatch[0].match(/title=["'](?:播放)?([^"']+)["']/i);
-                epName = nameMatch ? nameMatch[1] : ('第' + (episodes.length + 1) + '集');
+    // Extract episodes: <a href="/vodplay/202652077/ep1">第01集</a>
+    var epRegex = /<a[^>]+href=["'](\/vodplay\/[^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi;
+    var m;
+    var episodes = [];
+    var seenEp = {};
+    while ((m = epRegex.exec(html)) !== null) {
+        var name = m[2].replace(/<[^>]+>/g, '').trim();
+        var epHref = m[1];
+        if (name && (name.indexOf('集') !== -1 || name.indexOf('期') !== -1 || /^\d+$/.test(name) || name === '正片')) {
+            if (!seenEp[epHref]) {
+                seenEp[epHref] = true;
+                episodes.push(name + '$' + epHref);
             }
-            episodes.push(epName + '$' + epHref);
-        }
-
-        if (episodes.length > 0) {
-            fromList.push(tabTitle);
-            playUrlList.push(episodes.join('#'));
         }
     }
+    // Reverse episodes so earlier episodes appear first
+    episodes.reverse();
 
-    // Fallback if no tabbed playlists found
-    if (fromList.length === 0) {
-        fromList.push('默认线路');
-        var singleEpRegex = /href=["'](\/niplay\/[^"']+)["']/gi;
-        var sm;
-        var fallbackEps = [];
-        var epIdx = 1;
-        while ((sm = singleEpRegex.exec(html)) !== null) {
-            fallbackEps.push('第' + epIdx + '集$' + sm[1]);
-            epIdx++;
-        }
-        playUrlList.push(fallbackEps.join('#'));
+    if (episodes.length === 0) {
+        episodes.push('正片$/vodplay/' + cleanId + '/ep1');
     }
 
     var vod = {
         vod_id: cleanId,
         vod_name: vodName,
-        vod_pic: vodPic,
+        vod_pic: siteHost + '/imgs/small/' + cleanId + '.jpg',
         type_name: '',
-        vod_year: cleanText(yearMatch),
-        vod_area: cleanText(areaMatch),
-        vod_remarks: cleanText(remarkMatch),
-        vod_actor: cleanText(actorMatch),
-        vod_director: cleanText(directorMatch),
-        vod_content: cleanText(descMatch),
-        vod_play_from: fromList.join('$$$'),
-        vod_play_url: playUrlList.join('$$$')
+        vod_year: year,
+        vod_area: area,
+        vod_remarks: '',
+        vod_actor: '',
+        vod_director: '',
+        vod_content: desc,
+        vod_play_from: '泥视频专线',
+        vod_play_url: episodes.join('#')
     };
 
     return JSON.stringify({
@@ -302,28 +266,33 @@ function detail(id) {
  * Lifecycle: play
  */
 function play(flag, id, flags) {
-    var playPageUrl = id;
-    if (playPageUrl.indexOf('http') !== 0) {
-        if (playPageUrl.indexOf('/') !== 0) {
-            playPageUrl = '/' + playPageUrl;
-        }
-        playPageUrl = siteHost + playPageUrl;
-    }
+    // id can be e.g. "/vodplay/202652077/ep1" or "202652077-ep1"
+    var clean = ('' + id).replace(/^\/+/, '').replace(/^vodplay\//, '').replace('/', '-');
+    var apiUrl = siteHost + '/xhr_playinfo/' + clean;
 
-    var html = httpReq(playPageUrl, {
+    var resp = httpReq(apiUrl, {
         headers: {
             'User-Agent': DEFAULT_UA,
-            'Referer': siteHost + '/'
+            'Referer': siteHost + '/vodplay/' + clean.replace('-', '/'),
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json, text/javascript, */*; q=0.01'
         }
     });
 
     var streamUrl = '';
-
-    if (html) {
-        var m = html.match(/player_aaaa\s*=\s*\{[\s\S]*?"url"\s*:\s*["']([^"']+)["']/);
-        if (m) {
-            streamUrl = m[1].replace(/\\/g, '');
-        }
+    if (resp) {
+        try {
+            var data = (typeof resp === 'string') ? JSON.parse(resp) : resp;
+            if (data && data.pdatas && data.pdatas.length > 0) {
+                for (var i = 0; i < data.pdatas.length; i++) {
+                    var p = data.pdatas[i];
+                    if (p.playurl && (p.playurl.indexOf('http') === 0)) {
+                        streamUrl = p.playurl;
+                        break;
+                    }
+                }
+            }
+        } catch (e) {}
     }
 
     if (streamUrl) {
@@ -338,11 +307,10 @@ function play(flag, id, flags) {
         });
     }
 
-    // Fallback to web parser
     return JSON.stringify({
-        parse: 1,
+        parse: 0,
         playUrl: '',
-        url: playPageUrl,
+        url: '',
         header: {
             'User-Agent': DEFAULT_UA,
             'Referer': siteHost + '/'
@@ -355,23 +323,16 @@ function play(flag, id, flags) {
  */
 function search(wd, quick, pg) {
     pg = parseInt(pg, 10) || 1;
-    var encodedWd = encodeURIComponent(wd || '');
-    var searchUrl = siteHost + '/s/' + encodedWd + '-------------/?page=' + pg;
-
+    var searchUrl = siteHost + '/search.html?keyword=' + encodeURIComponent(wd || '');
     var html = httpReq(searchUrl, {
-        headers: {
-            'User-Agent': DEFAULT_UA,
-            'Referer': siteHost + '/'
-        }
+        headers: { 'User-Agent': DEFAULT_UA, 'Referer': siteHost + '/' }
     });
 
     var list = parseCardList(html);
-    var hasMore = list.length >= 15;
-    var pageCount = hasMore ? (pg + 1) : pg;
 
     return JSON.stringify({
         page: pg,
-        pagecount: pageCount,
+        pagecount: 1,
         limit: list.length,
         total: list.length,
         list: list

@@ -9,9 +9,9 @@
 | 源 Key | 名称 | 目标站点 | 爬虫脚本 | 特点 |
 | :--- | :--- | :--- | :--- | :--- |
 | `zhuiying` | **追影影视** | [zhuiying3.cc](https://zhuiying3.cc) | `gaze.js` | 防盗链 MD5 验签与 Base64 解密，直接提取极速直连 m3u8 |
-| `nivod` | **泥视频** | [www.nivod.vip](https://www.nivod.vip) | `nivod.js` | 7 条独立播放线路，全部输出原画/超清直链 m3u8，免 VIP 解析秒开 |
+| `nivod` | **泥视频** | [www.nivod.cc](https://www.nivod.cc) | `nivod.js` | 官方 PC 站直出源，多线路免密直解极速 m3u8，秒开零等待 |
 | `aidianying` | **爱电影** | [kuhh4jo.com](https://kuhh4jo.com) | `aidianying.js` | SHA1(MD5()) 双重验签直连 RESTful API，腾讯云 EdgeOne 蓝光/超清直链免密秒开 |
-| `xueluo` | **雪落影视** | [v.xl01.eu.cc](https://v.xl01.eu.cc) | `xueluo.js` | 内置纯 JS AES-128-ECB 动态验签，提取 4GB+ 1080P/4K 高清 MP4/CDN 原画直链 |
+| `xueluo` | **雪落影视** | [v.xl01.cc.ua](https://v.xl01.cc.ua) | `xueluo.js` | 内置纯 JS AES-128-ECB 动态验签，提取 4GB+ 1080P/4K 高清 MP4/CDN 原画直链 |
 | `jinpai` | **金牌影院** | [vv3nwjk.com](https://vv3nwjk.com) | `jinpai.js` | 蓝光原画专线，SHA1(MD5()) 签名直链输出 1080P/720P 多码率 m3u8 |
 
 ---
@@ -89,11 +89,11 @@ https://cdn.jsdelivr.net/gh/wdssll/tvbox-spider-zhuiying@main/config.json
       "filterable": 0,
       "categories": [
         "电影",
-        "剧集",
+        "电视剧",
         "综艺",
         "动漫"
       ],
-      "ext": "https://www.nivod.vip"
+      "ext": "https://www.nivod.cc"
     },
     {
       "key": "aidianying",
@@ -123,5 +123,7 @@ https://cdn.jsdelivr.net/gh/wdssll/tvbox-spider-zhuiying@main/config.json
 - `gaze.js`：追影影视 QuickJS 爬虫脚本。
 - `nivod.js`：泥视频 QuickJS 爬虫脚本。
 - `aidianying.js`：爱电影 QuickJS 爬虫脚本。
+- `xueluo.js`：雪落影视 QuickJS 爬虫脚本。
+- `jinpai.js`：金牌影院 QuickJS 爬虫脚本。
 - `config.json`：多源配置文件（包含默认聚合解析器）。
 - `server.mjs`：本地局域网测试服务。
