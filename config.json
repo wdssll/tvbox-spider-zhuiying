@@ -91,6 +91,22 @@
         "短剧"
       ],
       "ext": "https://vv3nwjk.com"
+    },
+    {
+      "key": "nnyy",
+      "name": "努努影院",
+      "type": 3,
+      "api": "./nnyy.js",
+      "searchable": 1,
+      "quickSearch": 1,
+      "filterable": 1,
+      "categories": [
+        "电影",
+        "电视剧",
+        "综艺",
+        "动漫"
+      ],
+      "ext": "https://nnyy.in"
     }
   ],
   "parses": [

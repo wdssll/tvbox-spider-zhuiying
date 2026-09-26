@@ -13,6 +13,7 @@
 | `aidianying` | **爱电影** | [kuhh4jo.com](https://kuhh4jo.com) | `aidianying.js` | SHA1(MD5()) 双重验签直连 RESTful API，腾讯云 EdgeOne 蓝光/超清直链免密秒开 |
 | `xueluo` | **雪落影视** | [v.xl01.cc.ua](https://v.xl01.cc.ua) | `xueluo.js` | 内置纯 JS AES-128-ECB 动态验签，提取 4GB+ 1080P/4K 高清 MP4/CDN 原画直链 |
 | `jinpai` | **金牌影院** | [vv3nwjk.com](https://vv3nwjk.com) | `jinpai.js` | 蓝光原画专线，SHA1(MD5()) 签名直链输出 1080P/720P 多码率 m3u8 |
+| `nnyy` | **努努影院** | [nnyy.in](https://nnyy.in) | `nnyy.js` | 极速直连，量子/万佳/暴风多线路 1080P 高清 m3u8，免密直解秒开 |
 
 ---
 
@@ -125,6 +126,7 @@ https://cdn.jsdelivr.net/gh/wdssll/tvbox-spider-zhuiying@main/config.json
 - `aidianying.js`：爱电影 QuickJS 爬虫脚本。
 - `xueluo.js`：雪落影视 QuickJS 爬虫脚本。
 - `jinpai.js`：金牌影院 QuickJS 爬虫脚本。
+- `nnyy.js`：努努影院 QuickJS 爬虫脚本。
 - `youtube_live.txt`：YouTube 24/7 高清直播频道聚合列表。
 - `config.json`：多源配置文件（包含默认聚合解析器）。
 - `server.mjs`：本地局域网测试服务。
