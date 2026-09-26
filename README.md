@@ -13,7 +13,6 @@
 | `aidianying` | **爱电影** | [kuhh4jo.com](https://kuhh4jo.com) | `aidianying.js` | SHA1(MD5()) 双重验签直连 RESTful API，腾讯云 EdgeOne 蓝光/超清直链免密秒开 |
 | `xueluo` | **雪落影视** | [v.xl01.cc.ua](https://v.xl01.cc.ua) | `xueluo.js` | 内置纯 JS AES-128-ECB 动态验签，提取 4GB+ 1080P/4K 高清 MP4/CDN 原画直链 |
 | `jinpai` | **金牌影院** | [vv3nwjk.com](https://vv3nwjk.com) | `jinpai.js` | 蓝光原画专线，SHA1(MD5()) 签名直链输出 1080P/720P 多码率 m3u8 |
-| `youtube` | **YouTube** | [youtube.com](https://www.youtube.com) | `csp_Youtube` | 原生模块，支持 YouTube 热门精选、全网搜索、高清视频与多频道直播 |
 
 ---
 

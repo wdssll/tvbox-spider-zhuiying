@@ -91,24 +91,6 @@
         "短剧"
       ],
       "ext": "https://vv3nwjk.com"
-    },
-    {
-      "key": "youtube",
-      "name": "YouTube 视频/直播",
-      "type": 3,
-      "api": "csp_Youtube",
-      "searchable": 1,
-      "quickSearch": 1,
-      "filterable": 1,
-      "ext": "https://www.youtube.com"
-    }
-  ],
-  "lives": [
-    {
-      "name": "YouTube 直播",
-      "type": 0,
-      "url": "./youtube_live.txt",
-      "playerType": 1
     }
   ],
   "parses": [
