@@ -93,6 +93,14 @@
       "ext": "https://vv3nwjk.com"
     }
   ],
+  "lives": [
+    {
+      "name": "YouTube 直播",
+      "type": 0,
+      "url": "./youtube_live.txt",
+      "playerType": 1
+    }
+  ],
   "parses": [
     {
       "name": "聚合解析",

@@ -1,0 +1,23 @@
+国际英语新闻,#genre#
+Sky News,https://www.youtube.com/@SkyNews/live
+DW News,https://www.youtube.com/@dwnews/live
+Al Jazeera English,https://www.youtube.com/@aljazeeraenglish/live
+France 24 English,https://www.youtube.com/@France24_en/live
+CNA (Channel NewsAsia),https://www.youtube.com/@channelnewsasia/live
+ABC News Australia,https://www.youtube.com/@abcnews/live
+NBC News NOW,https://www.youtube.com/@NBCNews/live
+Euronews English,https://www.youtube.com/@euronews/live
+
+华语新闻/财经,#genre#
+TVBS 新闻,https://www.youtube.com/@TVBSNEWS01/live
+东森新闻 EBC,https://www.youtube.com/@newsebc/live
+三立新闻 SETN,https://www.youtube.com/@setn/live
+公视新闻 PTS,https://www.youtube.com/@pnnpts/live
+寰宇新闻,https://www.youtube.com/@globalnewstw/live
+
+太空/科学/慢直播,#genre#
+NASA TV,https://www.youtube.com/@NASA/live
+Earth Views (ISS),https://www.youtube.com/@SpaceVideosHD/live
+Explore Nature Africa,https://www.youtube.com/@ExploreAfrica/live
+Explore Zen Den Oceans,https://www.youtube.com/@ExploreZenDen/live
+Lofi Girl (Relax/Study),https://www.youtube.com/@LofiGirl/live
