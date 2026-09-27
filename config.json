@@ -107,6 +107,16 @@
         "动漫"
       ],
       "ext": "https://nnyy.in"
+    },
+    {
+      "key": "ffzy",
+      "name": "非凡资源",
+      "type": 1,
+      "api": "https://ffzy5.tv/api.php/provide/vod/from/ffm3u8/at/json/",
+      "searchable": 1,
+      "quickSearch": 1,
+      "filterable": 1,
+      "playUrl": ""
     }
   ],
   "parses": [
