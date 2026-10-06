@@ -51,31 +51,6 @@
       "ext": "https://kuhh4jo.com"
     },
     {
-      "key": "xueluo",
-      "name": "雪落影视",
-      "type": 3,
-      "api": "./xueluo.js",
-      "searchable": 1,
-      "quickSearch": 1,
-      "filterable": 0,
-      "categories": [
-        "全部影视",
-        "电影",
-        "剧集",
-        "动作",
-        "科幻",
-        "喜剧",
-        "爱情",
-        "悬疑",
-        "犯罪",
-        "美剧",
-        "韩剧",
-        "日剧",
-        "短剧"
-      ],
-      "ext": "https://v.xl01.cc.ua"
-    },
-    {
       "key": "jinpai",
       "name": "金牌影院",
       "type": 3,
@@ -123,7 +98,7 @@
     {
       "name": "聚合解析",
       "type": 0,
-      "url": "https://jx.jsonplayer.com/player/?url="
+      "url": "https://jx.aidouer.net/?url="
     },
     {
       "name": "通用解析",
