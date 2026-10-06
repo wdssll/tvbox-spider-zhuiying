@@ -11,7 +11,6 @@
 | `zhuiying` | **追影影视** | [zhuiying3.cc](https://zhuiying3.cc) | `gaze.js` | 防盗链 MD5 验签与 Base64 解密，直接提取极速直连 m3u8 |
 | `nivod` | **泥视频** | [www.nivod.cc](https://www.nivod.cc) | `nivod.js` | 官方 PC 站直出源，多线路免密直解极速 m3u8，秒开零等待 |
 | `aidianying` | **爱电影** | [kuhh4jo.com](https://kuhh4jo.com) | `aidianying.js` | SHA1(MD5()) 双重验签直连 RESTful API，腾讯云 EdgeOne 蓝光/超清直链免密秒开 |
-| `xueluo` | **雪落影视** | [v.xl01.cc.ua](https://v.xl01.cc.ua) | `xueluo.js` | 内置纯 JS AES-128-ECB 动态验签，提取 4GB+ 1080P/4K 高清 MP4/CDN 原画直链 |
 | `jinpai` | **金牌影院** | [vv3nwjk.com](https://vv3nwjk.com) | `jinpai.js` | 蓝光原画专线，SHA1(MD5()) 签名直链输出 1080P/720P 多码率 m3u8 |
 | `nnyy` | **努努影院** | [nnyy.in](https://nnyy.in) | `nnyy.js` | 极速直连，量子/万佳/暴风多线路 1080P 高清 m3u8，免密直解秒开 |
 | `ffzy` | **非凡资源** | [ffzy5.tv](https://ffzy5.tv) | 原生 MacCMS API (`type: 1`) | 9.8万+片源库，原生采集接口直连，1080P 高清 ffm3u8 切片极速直链 |
@@ -125,9 +124,7 @@ https://cdn.jsdelivr.net/gh/wdssll/tvbox-spider-zhuiying@main/config.json
 - `gaze.js`：追影影视 QuickJS 爬虫脚本。
 - `nivod.js`：泥视频 QuickJS 爬虫脚本。
 - `aidianying.js`：爱电影 QuickJS 爬虫脚本。
-- `xueluo.js`：雪落影视 QuickJS 爬虫脚本。
 - `jinpai.js`：金牌影院 QuickJS 爬虫脚本。
 - `nnyy.js`：努努影院 QuickJS 爬虫脚本。
-- `youtube_live.txt`：YouTube 24/7 高清直播频道聚合列表。
 - `config.json`：多源配置文件（包含默认聚合解析器）。
 - `server.mjs`：本地局域网测试服务。
