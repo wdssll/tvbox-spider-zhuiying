@@ -1,20 +1,11 @@
+import { Spider } from 'catvod';
+
 /**
  * FongMi / TVBox QuickJS Spider for 追影 (zhuiying3.cc)
- * Type: 3 (QuickJS ES Module)
- * All lifecycle methods return synchronous JSON-stringified results.
+ * Type: 3 (FongMi QuickJS Class Module)
  */
 
-var siteHost = 'https://zhuiying3.cc';
-var proxyHost = '';
 var DEFAULT_UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
-
-function httpLog(msg) {
-    try {
-        if (proxyHost) {
-            httpReq(proxyHost + '/log?msg=' + encodeURIComponent(msg), { timeout: 3000 });
-        }
-    } catch (e) {}
-}
 
 // Pure JavaScript MD5 implementation (Synchronous & QuickJS compatible)
 function md5(string) {
@@ -200,66 +191,6 @@ function base64Decode(str) {
     return output;
 }
 
-// Universal HTTP helper (Synchronous in QuickJS, fallback support)
-function httpReq(url, opt) {
-    opt = opt || {};
-    var method = (opt.method || 'GET').toUpperCase();
-    var headers = opt.headers || {};
-    if (!headers['User-Agent'] && !headers['user-agent']) {
-        headers['User-Agent'] = DEFAULT_UA;
-    }
-    var data = opt.data || opt.body || null;
-
-    var fnReq = (typeof req === 'function') ? req :
-                (typeof globalThis !== 'undefined' && typeof globalThis.req === 'function') ? globalThis.req :
-                (typeof fm !== 'undefined' && typeof fm.req === 'function') ? fm.req.bind(fm) :
-                (typeof fongmi !== 'undefined' && typeof fongmi.req === 'function') ? fongmi.req.bind(fongmi) : null;
-
-    if (fnReq) {
-        var rOpt = {
-            method: method,
-            headers: headers,
-            timeout: opt.timeout || 15000
-        };
-        if (opt.data) {
-            rOpt.data = opt.data;
-        }
-        if (opt.body) {
-            rOpt.body = opt.body;
-        }
-        if (data && !rOpt.data) {
-            rOpt.data = data;
-        }
-        if (data && !rOpt.body) {
-            rOpt.body = (typeof data === 'string') ? data : JSON.stringify(data);
-        }
-        if (opt.postType) {
-            rOpt.postType = opt.postType;
-        }
-
-        try {
-            var resp = fnReq(url, rOpt);
-            if (resp) {
-                if (typeof resp === 'string') return resp;
-                if (resp.content) return resp.content;
-                if (resp.data && typeof resp.data === 'string') return resp.data;
-                if (resp.body && typeof resp.body === 'string') return resp.body;
-                return JSON.stringify(resp);
-            }
-        } catch (e) {
-            return '';
-        }
-        return '';
-    }
-
-    // Fallback if running under node environment (for testing)
-    if (typeof fetch === 'function') {
-        throw new Error('fetch is asynchronous, native req required for synchronous QuickJS');
-    }
-
-    return '';
-}
-
 // Helper: parse regular category cards from HTML
 function parseCardList(html) {
     if (!html) return [];
@@ -361,417 +292,345 @@ var categoryClasses = [
     { type_id: 'duanju', type_name: '短剧' }
 ];
 
-/**
- * Lifecycle Hook 1: init(ext)
- */
-function init(ext) {
-    if (typeof ext === 'string' && ext.startsWith('{')) {
-        try { ext = JSON.parse(ext); } catch (e) {}
-    }
-    if (typeof ext === 'object' && ext !== null) {
-        if (ext.host) siteHost = ext.host.replace(/\/+$/, '');
-        if (ext.proxy) proxyHost = ext.proxy.replace(/\/+$/, '');
-    } else if (typeof ext === 'string' && ext.startsWith('http')) {
-        siteHost = ext.replace(/\/+$/, '');
-    }
-}
-
-/**
- * Lifecycle Hook 2: home(filter) / homeContent(filter)
- */
-function home(filter) {
-    var filters = {};
-    for (var i = 0; i < categoryClasses.length; i++) {
-        filters[categoryClasses[i].type_id] = defaultFilterConfig;
+export default class GazeSpider extends Spider {
+    constructor() {
+        super();
+        this.siteHost = 'https://zhuiying3.cc';
+        this.proxyHost = '';
     }
 
-    var list = [];
-    try {
-        var html = httpReq(siteHost + '/');
-        list = parseCardList(html);
-    } catch (e) {
-        list = [];
-    }
-
-    return JSON.stringify({
-        class: categoryClasses,
-        filters: filters,
-        list: list
-    });
-}
-
-function homeVod() {
-    var list = [];
-    try {
-        var html = httpReq(siteHost + '/');
-        list = parseCardList(html);
-    } catch (e) {
-        list = [];
-    }
-    return JSON.stringify({ list: list });
-}
-
-/**
- * Lifecycle Hook 3: category(tid, pg, filter, extend) / categoryContent(...)
- */
-function category(tid, pg, filter, extend) {
-    var page = parseInt(pg) || 1;
-    extend = extend || {};
-
-    var area = extend.area ? encodeURIComponent(extend.area) : '';
-    var by = extend.by ? encodeURIComponent(extend.by) : '';
-    var class_name = extend.class ? encodeURIComponent(extend.class) : '';
-    var year = extend.year ? encodeURIComponent(extend.year) : '';
-
-    var parts = [tid, area, by, class_name, '', '', '', '', String(page), '', '', year];
-    var url = siteHost + '/vodshow/' + parts.join('-') + '.html';
-
-    var list = [];
-    try {
-        var html = httpReq(url);
-        list = parseCardList(html);
-    } catch (e) {
-        list = [];
-    }
-
-    return JSON.stringify({
-        page: page,
-        pagecount: 999,
-        limit: 27,
-        total: 9999,
-        list: list
-    });
-}
-
-/**
- * Lifecycle Hook 4: detail(id) / detailContent(id)
- */
-function detail(id) {
-    if (Array.isArray(id)) id = id[0];
-    var url = '';
-    if (id.startsWith('http')) {
-        url = id;
-    } else if (id.startsWith('/video/')) {
-        url = siteHost + id;
-    } else {
-        url = siteHost + '/video/' + id + '.html';
-    }
-
-    var html = httpReq(url);
-
-    var titleMatch = html.match(/<h1 class="detail-title">([^<]+)<\/h1>/);
-    var vod_name = titleMatch ? titleMatch[1].trim() : '';
-
-    var picMatch = html.match(/<img class="detail-poster" src="([^"]+)"/);
-    var vod_pic = picMatch ? picMatch[1].trim() : '';
-
-    var yearMatch = html.match(/<span class="detail-year">\(([^)]+)\)<\/span>/);
-    var vod_year = yearMatch ? yearMatch[1].trim() : '';
-
-    var typeMatch = html.match(/<span class="m-val">([^<]+)<\/span>\s*<span class="m-lbl">类型<\/span>/);
-    var type_name = typeMatch ? typeMatch[1].trim() : '';
-
-    var areaMatch = html.match(/<span class="m-val">([^<]+)<\/span>\s*<span class="m-lbl">制片国家\/地区<\/span>/);
-    var vod_area = areaMatch ? areaMatch[1].trim() : '';
-
-    var directorMatch = html.match(/<div class="actor-line">\s*<span class="label">导演:<\/span>\s*<span[^>]*>([^<]+)<\/span>/);
-    var vod_director = directorMatch ? directorMatch[1].trim() : '';
-
-    var actorMatch = html.match(/<div class="actor-line">\s*<span class="label">主演:<\/span>\s*<div[^>]*id="actorValBox"[^>]*>([\s\S]*?)<\/div>/);
-    var vod_actor = actorMatch ? actorMatch[1].replace(/<[^>]+>/g, '').trim() : '';
-
-    var descMatch = html.match(/<div class="synopsis-text"[^>]*id="synopsisContent"[^>]*>([\s\S]*?)<\/div>/);
-    var vod_content = descMatch ? descMatch[1].replace(/<[^>]+>/g, '').trim() : '';
-
-    var remarksMatch = html.match(/<div class="poster-badge">([^<]+)<\/div>/);
-    var vod_remarks = remarksMatch ? remarksMatch[1].trim() : '';
-
-    var tabRegex = /<div class="source-tab"[^>]*data-target="([^"]+)"[^>]*>[\s\S]*?<span class="tab-name">([^<]+)<\/span>/g;
-    var tabMap = {};
-    var tabOrder = [];
-    var tm;
-    while ((tm = tabRegex.exec(html)) !== null) {
-        tabMap[tm[1]] = tm[2].trim();
-        tabOrder.push(tm[1]);
-    }
-
-    var listRegex = /<div[^>]*class="[^"]*ep-square-list[^"]*"[^>]*id="([^"]+)"[^>]*>([\s\S]*?)<\/div>/g;
-    var listMap = {};
-    var lm;
-    while ((lm = listRegex.exec(html)) !== null) {
-        var listId = lm[1];
-        var listContent = lm[2];
-        var epRegex = /<a[^>]+href="(\/play\/[^"]+\.html)"[^>]*>([\s\S]*?)<\/a>/g;
-        var eps = [];
-        var em;
-        while ((em = epRegex.exec(listContent)) !== null) {
-            var playPath = em[1].trim();
-            var epName = em[2].replace(/<[^>]+>/g, '').trim();
-            if (epName && playPath) {
-                eps.push(epName + '$' + playPath);
-            }
+    async init(ext) {
+        if (typeof ext === 'string' && ext.startsWith('{')) {
+            try { ext = JSON.parse(ext); } catch (e) {}
         }
-        listMap[listId] = eps;
-    }
-
-    var playFromList = [];
-    var playUrlList = [];
-
-    for (var i = 0; i < tabOrder.length; i++) {
-        var tid = tabOrder[i];
-        if (listMap[tid] && listMap[tid].length > 0) {
-            playFromList.push(tabMap[tid] || tid);
-            playUrlList.push(listMap[tid].join('#'));
+        if (typeof ext === 'object' && ext !== null) {
+            if (ext.host) this.siteHost = ext.host.replace(/\/+$/, '');
+            if (ext.proxy) this.proxyHost = ext.proxy.replace(/\/+$/, '');
+        } else if (typeof ext === 'string' && ext.startsWith('http')) {
+            this.siteHost = ext.replace(/\/+$/, '');
         }
     }
 
-    var vod_info = {
-        vod_id: id,
-        vod_name: vod_name,
-        vod_pic: vod_pic,
-        type_name: type_name,
-        vod_year: vod_year,
-        vod_area: vod_area,
-        vod_remarks: vod_remarks,
-        vod_actor: vod_actor,
-        vod_director: vod_director,
-        vod_content: vod_content,
-        vod_play_from: playFromList.join('$$$'),
-        vod_play_url: playUrlList.join('$$$')
-    };
-
-    return JSON.stringify({
-        list: [vod_info]
-    });
-}
-
-/**
- * Lifecycle Hook 5: play(flag, id, vipFlags) / playerContent(...)
- */
-function play(flag, id, vipFlags) {
-    if (Array.isArray(id)) id = id[0];
-    httpLog('Entering play() with id: ' + id);
-
-    var playUrl = '';
-    if (id.startsWith('http')) {
-        playUrl = id;
-    } else if (id.startsWith('/')) {
-        playUrl = siteHost + id;
-    } else {
-        playUrl = siteHost + '/play/' + id + '.html';
-    }
-
-    var streamUrl = '';
-
-    // Step 1: Try Native Direct Resolution on the TV
-    try {
-        var html = httpReq(playUrl, {
-            headers: {
-                'User-Agent': DEFAULT_UA,
-                'Referer': siteHost + '/'
-            }
-        });
-
-        var match = html ? html.match(/MAC_PLAY_CONFIG\s*=\s*\{([\s\S]*?)\};/) : null;
-        if (match) {
-            var configText = '{' + match[1] + '}';
-            var requestUrlMatch = configText.match(/requestUrl\s*:\s*["']([^"']+)["']/);
-            var baseKeyMatch = configText.match(/baseKey\s*:\s*["']([^"']+)["']/);
-
-            if (requestUrlMatch && baseKeyMatch) {
-                var requestUrl = requestUrlMatch[1];
-                var baseKey = baseKeyMatch[1];
-                var timestamp = Math.floor(Date.now() / 1000);
-                var token = md5(baseKey + timestamp + DEFAULT_UA);
-
-                var postBody = 'url=' + encodeURIComponent(requestUrl) + '&timestamp=' + timestamp + '&token=' + token;
-                var postDataObj = {
-                    url: requestUrl,
-                    timestamp: String(timestamp),
-                    token: token
-                };
-
-                var apiRespStr = httpReq(siteHost + '/player_api.php', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
-                        'Referer': playUrl,
-                        'User-Agent': DEFAULT_UA,
-                        'X-Requested-With': 'XMLHttpRequest'
-                    },
-                    postType: 'form',
-                    data: postDataObj,
-                    body: postBody
-                });
-
-                if (apiRespStr) {
-                    try {
-                        var apiJson = JSON.parse(apiRespStr);
-                        if (apiJson && apiJson.data) {
-                            var reversed = apiJson.data.split('').reverse().join('');
-                            var decoded = base64Decode(reversed);
-                            var data = JSON.parse(decoded);
-                            streamUrl = data.jmurl || data.url || '';
-                            if (streamUrl) {
-                                httpLog('Native resolution succeeded: ' + streamUrl);
-                            }
-                        } else if (apiJson && apiJson.error) {
-                            httpLog('Native player_api returned error: ' + apiJson.error);
-                        }
-                    } catch (pe) {
-                        httpLog('JSON parse error of apiResp: ' + pe.message);
-                    }
-                } else {
-                    httpLog('Native player_api returned empty response');
-                }
-            } else {
-                httpLog('requestUrl or baseKey missing from configText');
-            }
-        } else {
-            httpLog('MAC_PLAY_CONFIG not matched in play page');
+    async httpReq(url, opt) {
+        opt = opt || {};
+        var method = (opt.method || 'GET').toUpperCase();
+        var headers = opt.headers || {};
+        if (!headers['User-Agent'] && !headers['user-agent']) {
+            headers['User-Agent'] = DEFAULT_UA;
         }
-    } catch (e) {
-        httpLog('Native resolution exception: ' + e.message);
-    }
+        var rOpt = {
+            method: method,
+            headers: headers
+        };
+        if (opt.data) rOpt.data = opt.data;
+        if (opt.body) rOpt.body = opt.body;
+        if (opt.data && !rOpt.body && method === 'POST') {
+            rOpt.body = typeof opt.data === 'string' ? opt.data : JSON.stringify(opt.data);
+        }
 
-    // Step 2: Automatic fallback to proxy server if native resolution did not produce a streamUrl
-    if (!streamUrl && proxyHost) {
         try {
-            httpLog('Attempting proxy resolution via: ' + proxyHost);
-            var proxyResp = httpReq(proxyHost + '/parse_play?id=' + encodeURIComponent(id), { timeout: 8000 });
-            if (proxyResp) {
-                var pJson = JSON.parse(proxyResp);
-                if (pJson && pJson.code === 1 && pJson.url) {
-                    streamUrl = pJson.url;
-                    httpLog('Proxy resolution succeeded: ' + streamUrl);
-                } else if (pJson && pJson.error) {
-                    httpLog('Proxy resolution failed with error: ' + pJson.error);
+            var res = await this.net.req(url, rOpt);
+            if (res && res.content) return res.content;
+            return '';
+        } catch (e) {
+            return '';
+        }
+    }
+
+    async homeContent(filter) {
+        var filters = {};
+        for (var i = 0; i < categoryClasses.length; i++) {
+            filters[categoryClasses[i].type_id] = defaultFilterConfig;
+        }
+
+        var list = [];
+        try {
+            var html = await this.httpReq(this.siteHost + '/');
+            list = parseCardList(html);
+        } catch (e) {
+            list = [];
+        }
+
+        return {
+            class: categoryClasses,
+            filters: filters,
+            list: list
+        };
+    }
+
+    async homeVideoContent() {
+        var list = [];
+        try {
+            var html = await this.httpReq(this.siteHost + '/');
+            list = parseCardList(html);
+        } catch (e) {
+            list = [];
+        }
+        return { list: list };
+    }
+
+    async categoryContent(tid, pg, filter, extend) {
+        var page = parseInt(pg) || 1;
+        extend = extend || {};
+
+        var area = extend.area ? encodeURIComponent(extend.area) : '';
+        var by = extend.by ? encodeURIComponent(extend.by) : '';
+        var class_name = extend.class ? encodeURIComponent(extend.class) : '';
+        var year = extend.year ? encodeURIComponent(extend.year) : '';
+
+        var parts = [tid, area, by, class_name, '', '', '', '', String(page), '', '', year];
+        var url = this.siteHost + '/vodshow/' + parts.join('-') + '.html';
+
+        var list = [];
+        try {
+            var html = await this.httpReq(url);
+            list = parseCardList(html);
+        } catch (e) {
+            list = [];
+        }
+
+        return {
+            page: page,
+            pagecount: 999,
+            limit: 27,
+            total: 9999,
+            list: list
+        };
+    }
+
+    async detailContent(ids) {
+        var id = Array.isArray(ids) ? ids[0] : ids;
+        var url = '';
+        if (id.startsWith('http')) {
+            url = id;
+        } else if (id.startsWith('/video/')) {
+            url = this.siteHost + id;
+        } else {
+            url = this.siteHost + '/video/' + id + '.html';
+        }
+
+        var html = await this.httpReq(url);
+
+        var titleMatch = html.match(/<h1 class="detail-title">([^<]+)<\/h1>/);
+        var vod_name = titleMatch ? titleMatch[1].trim() : '';
+
+        var picMatch = html.match(/<img class="detail-poster" src="([^"]+)"/);
+        var vod_pic = picMatch ? picMatch[1].trim() : '';
+
+        var yearMatch = html.match(/<span class="detail-year">\(([^)]+)\)<\/span>/);
+        var vod_year = yearMatch ? yearMatch[1].trim() : '';
+
+        var typeMatch = html.match(/<span class="m-val">([^<]+)<\/span>\s*<span class="m-lbl">类型<\/span>/);
+        var type_name = typeMatch ? typeMatch[1].trim() : '';
+
+        var areaMatch = html.match(/<span class="m-val">([^<]+)<\/span>\s*<span class="m-lbl">制片国家\/地区<\/span>/);
+        var vod_area = areaMatch ? areaMatch[1].trim() : '';
+
+        var directorMatch = html.match(/<div class="actor-line">\s*<span class="label">导演:<\/span>\s*<span[^>]*>([^<]+)<\/span>/);
+        var vod_director = directorMatch ? directorMatch[1].trim() : '';
+
+        var actorMatch = html.match(/<div class="actor-line">\s*<span class="label">主演:<\/span>\s*<div[^>]*id="actorValBox"[^>]*>([\s\S]*?)<\/div>/);
+        var vod_actor = actorMatch ? actorMatch[1].replace(/<[^>]+>/g, '').trim() : '';
+
+        var descMatch = html.match(/<div class="synopsis-text"[^>]*id="synopsisContent"[^>]*>([\s\S]*?)<\/div>/);
+        var vod_content = descMatch ? descMatch[1].replace(/<[^>]+>/g, '').trim() : '';
+
+        var remarksMatch = html.match(/<div class="poster-badge">([^<]+)<\/div>/);
+        var vod_remarks = remarksMatch ? remarksMatch[1].trim() : '';
+
+        var tabRegex = /<div class="source-tab"[^>]*data-target="([^"]+)"[^>]*>[\s\S]*?<span class="tab-name">([^<]+)<\/span>/g;
+        var tabMap = {};
+        var tabOrder = [];
+        var tm;
+        while ((tm = tabRegex.exec(html)) !== null) {
+            tabMap[tm[1]] = tm[2].trim();
+            tabOrder.push(tm[1]);
+        }
+
+        var listRegex = /<div[^>]*class="[^"]*ep-square-list[^"]*"[^>]*id="([^"]+)"[^>]*>([\s\S]*?)<\/div>/g;
+        var listMap = {};
+        var lm;
+        while ((lm = listRegex.exec(html)) !== null) {
+            var listId = lm[1];
+            var listContent = lm[2];
+            var epRegex = /<a[^>]+href="(\/play\/[^"]+\.html)"[^>]*>([\s\S]*?)<\/a>/g;
+            var eps = [];
+            var em;
+            while ((em = epRegex.exec(listContent)) !== null) {
+                var playPath = em[1].trim();
+                var epName = em[2].replace(/<[^>]+>/g, '').trim();
+                if (epName && playPath) {
+                    eps.push(epName + '$' + playPath);
                 }
             }
-        } catch (pe) {
-            httpLog('Proxy resolution exception: ' + pe.message);
+            listMap[listId] = eps;
         }
+
+        var playFromList = [];
+        var playUrlList = [];
+
+        for (var i = 0; i < tabOrder.length; i++) {
+            var tid = tabOrder[i];
+            if (listMap[tid] && listMap[tid].length > 0) {
+                playFromList.push(tabMap[tid] || tid);
+                playUrlList.push(listMap[tid].join('#'));
+            }
+        }
+
+        var vod_info = {
+            vod_id: id,
+            vod_name: vod_name,
+            vod_pic: vod_pic,
+            type_name: type_name,
+            vod_year: vod_year,
+            vod_area: vod_area,
+            vod_remarks: vod_remarks,
+            vod_actor: vod_actor,
+            vod_director: vod_director,
+            vod_content: vod_content,
+            vod_play_from: playFromList.join('$$$'),
+            vod_play_url: playUrlList.join('$$$')
+        };
+
+        return {
+            list: [vod_info]
+        };
     }
 
-    if (!streamUrl) {
-        httpLog('All resolution methods failed for id: ' + id);
-        return JSON.stringify({
+    async playerContent(flag, id, vipFlags) {
+        if (Array.isArray(id)) id = id[0];
+
+        var playUrl = '';
+        if (id.startsWith('http')) {
+            playUrl = id;
+        } else if (id.startsWith('/')) {
+            playUrl = this.siteHost + id;
+        } else {
+            playUrl = this.siteHost + '/play/' + id + '.html';
+        }
+
+        var streamUrl = '';
+
+        try {
+            var html = await this.httpReq(playUrl, {
+                headers: {
+                    'User-Agent': DEFAULT_UA,
+                    'Referer': this.siteHost + '/'
+                }
+            });
+
+            var match = html ? html.match(/MAC_PLAY_CONFIG\s*=\s*\{([\s\S]*?)\};/) : null;
+            if (match) {
+                var configText = '{' + match[1] + '}';
+                var requestUrlMatch = configText.match(/requestUrl\s*:\s*["']([^"']+)["']/);
+                var baseKeyMatch = configText.match(/baseKey\s*:\s*["']([^"']+)["']/);
+
+                if (requestUrlMatch && baseKeyMatch) {
+                    var requestUrl = requestUrlMatch[1];
+                    var baseKey = baseKeyMatch[1];
+                    var timestamp = Math.floor(Date.now() / 1000);
+                    var token = md5(baseKey + timestamp + DEFAULT_UA);
+
+                    var postBody = 'url=' + encodeURIComponent(requestUrl) + '&timestamp=' + timestamp + '&token=' + token;
+                    var postDataObj = {
+                        url: requestUrl,
+                        timestamp: String(timestamp),
+                        token: token
+                    };
+
+                    var apiRespStr = await this.httpReq(this.siteHost + '/player_api.php', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+                            'Referer': playUrl,
+                            'User-Agent': DEFAULT_UA,
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        data: postDataObj,
+                        body: postBody
+                    });
+
+                    if (apiRespStr) {
+                        try {
+                            var apiJson = JSON.parse(apiRespStr);
+                            if (apiJson && apiJson.data) {
+                                var reversed = apiJson.data.split('').reverse().join('');
+                                var decoded = base64Decode(reversed);
+                                var data = JSON.parse(decoded);
+                                streamUrl = data.jmurl || data.url || '';
+                            }
+                        } catch (pe) {}
+                    }
+                }
+            }
+        } catch (e) {}
+
+        if (!streamUrl && this.proxyHost) {
+            try {
+                var proxyResp = await this.httpReq(this.proxyHost + '/parse_play?id=' + encodeURIComponent(id));
+                if (proxyResp) {
+                    var pJson = JSON.parse(proxyResp);
+                    if (pJson && pJson.code === 1 && pJson.url) {
+                        streamUrl = pJson.url;
+                    }
+                }
+            } catch (pe) {}
+        }
+
+        if (!streamUrl) {
+            return {
+                parse: 0,
+                url: ''
+            };
+        }
+
+        return {
             parse: 0,
-            url: ''
+            playUrl: '',
+            url: streamUrl,
+            header: {
+                'User-Agent': DEFAULT_UA,
+                'Referer': this.siteHost + '/'
+            }
+        };
+    }
+
+    async searchContent(wd, quick, pg = '1') {
+        var page = parseInt(pg) || 1;
+        var url = this.siteHost + '/vod/search/wd/' + encodeURIComponent(wd) + '.html';
+        var html = await this.httpReq(url, {
+            headers: {
+                'Referer': this.siteHost + '/'
+            }
         });
-    }
 
-    return JSON.stringify({
-        parse: 0,
-        playUrl: '',
-        url: streamUrl,
-        header: {
-            'User-Agent': DEFAULT_UA,
-            'Referer': siteHost + '/'
-        },
-        headers: {
-            'User-Agent': DEFAULT_UA,
-            'Referer': siteHost + '/'
+        var list = [];
+        var cardRegex = /<a[^>]+href="\/video\/([a-zA-Z0-9]+)\.html"[^>]*class="(?:hero|list)-card-thumb"[^>]*title="([^"]*)"[^>]*>([\s\S]*?)<\/a>/g;
+        var m;
+        while ((m = cardRegex.exec(html)) !== null) {
+            var vod_id = m[1];
+            var vod_name = m[2].trim();
+            var inner = m[3];
+            var picMatch = inner.match(/<img[^>]+src="([^"]+)"/);
+            var vod_pic = picMatch ? picMatch[1].trim() : '';
+            var remarkMatch = inner.match(/<span[^>]*class="(?:hero|list)-thumb-remark"[^>]*>([^<]+)<\/span>/);
+            var vod_remarks = remarkMatch ? remarkMatch[1].trim() : '';
+            list.push({ vod_id: vod_id, vod_name: vod_name, vod_pic: vod_pic, vod_remarks: vod_remarks });
         }
-    });
-}
 
-/**
- * Lifecycle Hook 6: search(wd, quick, pg) / searchContent(...)
- */
-function search(wd, quick, pg) {
-    var page = parseInt(pg) || 1;
-    var url = siteHost + '/vod/search/wd/' + encodeURIComponent(wd) + '.html';
-    var html = httpReq(url, {
-        headers: {
-            'Referer': siteHost + '/'
+        if (list.length === 0) {
+            var fallbackList = parseCardList(html);
+            for (var i = 0; i < fallbackList.length; i++) {
+                list.push(fallbackList[i]);
+            }
         }
-    });
 
-    var list = [];
-    var cardRegex = /<a[^>]+href="\/video\/([a-zA-Z0-9]+)\.html"[^>]*class="(?:hero|list)-card-thumb"[^>]*title="([^"]*)"[^>]*>([\s\S]*?)<\/a>/g;
-    var m;
-    while ((m = cardRegex.exec(html)) !== null) {
-        var vod_id = m[1];
-        var vod_name = m[2].trim();
-        var inner = m[3];
-        var picMatch = inner.match(/<img[^>]+src="([^"]+)"/);
-        var vod_pic = picMatch ? picMatch[1].trim() : '';
-        var remarkMatch = inner.match(/<span[^>]*class="(?:hero|list)-thumb-remark"[^>]*>([^<]+)<\/span>/);
-        var vod_remarks = remarkMatch ? remarkMatch[1].trim() : '';
-        list.push({ vod_id: vod_id, vod_name: vod_name, vod_pic: vod_pic, vod_remarks: vod_remarks });
+        return {
+            page: page,
+            pagecount: 1,
+            limit: 20,
+            total: list.length,
+            list: list
+        };
     }
-
-    if (list.length === 0) {
-        var fallbackList = parseCardList(html);
-        for (var i = 0; i < fallbackList.length; i++) {
-            list.push(fallbackList[i]);
-        }
-    }
-
-    return JSON.stringify({
-        page: page,
-        pagecount: 1,
-        limit: 20,
-        total: list.length,
-        list: list
-    });
 }
-
-// Aliases for both naming conventions
-var homeContent = home;
-var homeVideoContent = homeVod;
-var categoryContent = category;
-var detailContent = detail;
-var playerContent = play;
-var searchContent = search;
-
-// Global exposure for non-ESM QuickJS loaders
-if (typeof globalThis !== 'undefined') {
-    globalThis.init = init;
-    globalThis.home = home;
-    globalThis.homeContent = homeContent;
-    globalThis.homeVod = homeVod;
-    globalThis.homeVideoContent = homeVideoContent;
-    globalThis.category = category;
-    globalThis.categoryContent = categoryContent;
-    globalThis.detail = detail;
-    globalThis.detailContent = detailContent;
-    globalThis.play = play;
-    globalThis.playerContent = playerContent;
-    globalThis.search = search;
-    globalThis.searchContent = searchContent;
-}
-
-// Default export for FongMi QuickJS ES Module
-export default {
-    init: init,
-    home: home,
-    homeContent: homeContent,
-    homeVod: homeVod,
-    homeVideoContent: homeVideoContent,
-    category: category,
-    categoryContent: categoryContent,
-    detail: detail,
-    detailContent: detailContent,
-    play: play,
-    playerContent: playerContent,
-    search: search,
-    searchContent: searchContent
-};
-
-export {
-    init,
-    home,
-    homeContent,
-    homeVod,
-    homeVideoContent,
-    category,
-    categoryContent,
-    detail,
-    detailContent,
-    play,
-    playerContent,
-    search,
-    searchContent
-};
