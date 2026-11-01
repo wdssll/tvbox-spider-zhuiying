@@ -530,6 +530,10 @@ export default class AidianyingSpider extends Spider {
         };
     }
 
+    async play(flag, id, flags) {
+        return await this.playerContent(flag, id, flags);
+    }
+
     async searchContent(wd, quick, pg = '1') {
         pg = parseInt(pg, 10) || 1;
         var res = await this.signedApiReq('/anonymous/video/searchByWordPageable', {
