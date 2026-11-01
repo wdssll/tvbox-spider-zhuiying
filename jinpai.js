@@ -1,76 +1,11 @@
+import { Spider } from 'catvod';
+
 /**
  * FongMi / TVBox QuickJS Spider for 金牌影院 (vv3nwjk.com)
- * Type: 3 (QuickJS ES Module)
- * All lifecycle methods return synchronous JSON-stringified results.
+ * Type: 3 (FongMi QuickJS Class Module)
  */
 
-var siteHost = 'https://vv3nwjk.com';
-var apiPrefix = '/mw-movie';
-var signKey = 'cb808529bae6b6be45ecfab29a4889bc';
 var DEFAULT_UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
-var deviceId = 'a1b2c3d4e5f6-1234-4567-89ab-cdef01234567';
-
-// Universal HTTP helper (Synchronous in QuickJS, fallback support)
-function httpReq(url, opt) {
-    opt = opt || {};
-    var method = (opt.method || 'GET').toUpperCase();
-    var headers = opt.headers || {};
-    if (!headers['User-Agent'] && !headers['user-agent']) {
-        headers['User-Agent'] = DEFAULT_UA;
-    }
-    if (!headers['Referer'] && !headers['referer']) {
-        headers['Referer'] = siteHost + '/';
-    }
-    var data = opt.data || opt.body || null;
-
-    var fnReq = (typeof req === 'function') ? req :
-                (typeof globalThis !== 'undefined' && typeof globalThis.req === 'function') ? globalThis.req :
-                (typeof fm !== 'undefined' && typeof fm.req === 'function') ? fm.req.bind(fm) :
-                (typeof fongmi !== 'undefined' && typeof fongmi.req === 'function') ? fongmi.req.bind(fongmi) : null;
-
-    if (fnReq) {
-        var rOpt = {
-            method: method,
-            headers: headers,
-            timeout: opt.timeout || 15000
-        };
-        if (opt.data) {
-            rOpt.data = opt.data;
-        }
-        if (opt.body) {
-            rOpt.body = opt.body;
-        }
-        if (data && !rOpt.data) {
-            rOpt.data = data;
-        }
-        if (data && !rOpt.body) {
-            rOpt.body = (typeof data === 'string') ? data : JSON.stringify(data);
-        }
-        if (opt.postType) {
-            rOpt.postType = opt.postType;
-        }
-
-        try {
-            var resp = fnReq(url, rOpt);
-            if (resp) {
-                if (typeof resp === 'string') return resp;
-                if (resp.content) return resp.content;
-                if (resp.data && typeof resp.data === 'string') return resp.data;
-                if (resp.body && typeof resp.body === 'string') return resp.body;
-                return JSON.stringify(resp);
-            }
-        } catch (e) {
-            return '';
-        }
-        return '';
-    }
-
-    if (typeof fetch === 'function') {
-        throw new Error('fetch is asynchronous, native req required for synchronous QuickJS');
-    }
-
-    return '';
-}
 
 // Pure JavaScript SHA1 Implementation
 function sha1(message) {
@@ -309,55 +244,18 @@ function md5(string) {
     return (md5_WordToHex(a) + md5_WordToHex(b) + md5_WordToHex(c) + md5_WordToHex(d)).toLowerCase();
 }
 
-// Compute API request signature: SHA1(MD5(sorted_query + "&key=" + signKey + "&t=" + t))
-function apiSign(params, timestamp) {
+function apiSign(params, timestamp, signKey) {
     var keys = Object.keys(params).sort();
     var queryParts = [];
     for (var i = 0; i < keys.length; i++) {
         var k = keys[i];
-        if (params[k] !== undefined && params[k] !== null && params[k] !== '') {
+        if (params[k] !== undefined && params[k] !== null) {
             queryParts.push(k + '=' + params[k]);
         }
     }
     var queryStr = queryParts.join('&');
-    var h = queryStr ? (queryStr + '&key=' + signKey + '&t=' + timestamp) : ('key=' + signKey + '&t=' + timestamp);
+    var h = queryStr + '&key=' + signKey + '&t=' + timestamp;
     return sha1(md5(h));
-}
-
-// Signed API request helper
-function signedApiReq(endpoint, params) {
-    params = params || {};
-    var timestamp = Date.now().toString();
-    var sign = apiSign(params, timestamp);
-
-    var queryParts = [];
-    var keys = Object.keys(params);
-    for (var i = 0; i < keys.length; i++) {
-        var k = keys[i];
-        if (params[k] !== undefined && params[k] !== null) {
-            queryParts.push(encodeURIComponent(k) + '=' + encodeURIComponent(params[k]));
-        }
-    }
-    var fullUrl = siteHost + apiPrefix + endpoint + (queryParts.length > 0 ? ('?' + queryParts.join('&')) : '');
-
-    var resp = httpReq(fullUrl, {
-        headers: {
-            'User-Agent': DEFAULT_UA,
-            'Referer': siteHost + '/',
-            'Accept': 'application/json, text/plain, */*',
-            'deviceId': deviceId,
-            'authorization': '',
-            'sign': sign,
-            't': timestamp
-        }
-    });
-
-    if (!resp) return null;
-    try {
-        return JSON.parse(resp);
-    } catch (e) {
-        return null;
-    }
 }
 
 var categoryClasses = [
@@ -368,311 +266,301 @@ var categoryClasses = [
     { type_id: '88', type_name: '短剧' }
 ];
 
-/**
- * Lifecycle: init
- */
-function init(ext) {
-    if (ext) {
-        if (typeof ext === 'string' && ext.indexOf('http') === 0) {
-            siteHost = ext.replace(/\/+$/, '');
-        } else if (typeof ext === 'object' && ext.site) {
-            siteHost = ext.site.replace(/\/+$/, '');
-        }
-    }
-    return JSON.stringify({
-        code: 1,
-        msg: 'ok'
-    });
-}
-
-/**
- * Lifecycle: home
- */
-function home(filter) {
-    return JSON.stringify({
-        class: categoryClasses,
-        filters: {}
-    });
-}
-
-/**
- * Lifecycle: homeVod
- */
-function homeVod() {
-    var res = signedApiReq('/anonymous/video/list', {
-        type1: '1',
-        pageNum: '1',
-        pageSize: '24'
-    });
-
-    var list = [];
-    if (res && res.data && res.data.list) {
-        var rawList = res.data.list;
-        for (var i = 0; i < rawList.length; i++) {
-            var item = rawList[i];
-            list.push({
-                vod_id: '' + item.vodId,
-                vod_name: item.vodName,
-                vod_pic: item.vodPic || '',
-                vod_remarks: item.vodRemarks || item.vodVersion || ''
-            });
-        }
+export default class JinpaiSpider extends Spider {
+    constructor() {
+        super();
+        this.siteHost = 'https://vv3nwjk.com';
+        this.apiPrefix = '/mw-movie';
+        this.signKey = 'cb808529bae6b6be45ecfab29a4889bc';
+        this.deviceId = 'a1b2c3d4e5f6-1234-4567-89ab-cdef01234567';
     }
 
-    return JSON.stringify({
-        list: list
-    });
-}
-
-/**
- * Lifecycle: category
- */
-function category(tid, pg, filter, extend) {
-    pg = parseInt(pg, 10) || 1;
-    var res = signedApiReq('/anonymous/video/list', {
-        type1: '' + tid,
-        pageNum: '' + pg,
-        pageSize: '24'
-    });
-
-    var list = [];
-    if (res && res.data && res.data.list) {
-        var rawList = res.data.list;
-        for (var i = 0; i < rawList.length; i++) {
-            var item = rawList[i];
-            list.push({
-                vod_id: '' + item.vodId,
-                vod_name: item.vodName,
-                vod_pic: item.vodPic || '',
-                vod_remarks: item.vodRemarks || item.vodVersion || ''
-            });
-        }
-    }
-
-    var hasMore = list.length >= 20;
-    var pageCount = hasMore ? (pg + 1) : pg;
-
-    return JSON.stringify({
-        page: pg,
-        pagecount: pageCount,
-        limit: list.length,
-        total: pageCount * list.length,
-        list: list
-    });
-}
-
-/**
- * Lifecycle: detail
- */
-function detail(id) {
-    var cleanId = ('' + id).replace(/[^0-9]/g, '');
-    var res = signedApiReq('/anonymous/video/detail', {
-        id: cleanId
-    });
-
-    if (!res || !res.data) {
-        return JSON.stringify({ list: [] });
-    }
-
-    var data = res.data;
-    var epList = data.episodeList || [];
-    var episodes = [];
-
-    for (var i = 0; i < epList.length; i++) {
-        var ep = epList[i];
-        var epName = ep.name || ('第' + (i + 1) + '集');
-        var nid = ep.nid || '';
-        episodes.push(epName + '$' + cleanId + '*' + nid);
-    }
-
-    var vod = {
-        vod_id: cleanId,
-        vod_name: data.vodName || '',
-        vod_pic: data.vodPic || '',
-        type_name: data.typeName || '',
-        vod_year: '' + (data.vodYear || ''),
-        vod_area: data.vodArea || '',
-        vod_remarks: data.vodRemarks || data.vodVersion || '',
-        vod_actor: data.vodActor || '',
-        vod_director: data.vodDirector || '',
-        vod_content: (data.vodContent || '').replace(/<[^>]+>/g, '').trim(),
-        vod_play_from: '蓝光专线',
-        vod_play_url: episodes.join('#')
-    };
-
-    return JSON.stringify({
-        list: [vod]
-    });
-}
-
-/**
- * Lifecycle: play
- */
-function play(flag, id, flags) {
-    var cleanId = '';
-    var nid = '';
-
-    if (id.indexOf('*') !== -1) {
-        var parts = id.split('*');
-        cleanId = parts[0];
-        nid = parts[1];
-    } else {
-        cleanId = id;
-    }
-
-    var res = signedApiReq('/anonymous/v2/video/episode/url', {
-        clientType: '1',
-        id: cleanId,
-        nid: nid
-    });
-
-    var streamUrl = '';
-    if (res && res.data && res.data.list && res.data.list.length > 0) {
-        var resList = res.data.list;
-        // Prefer highest resolution (1080 -> 720 -> 480 -> first available)
-        var bestItem = null;
-        for (var i = 0; i < resList.length; i++) {
-            if (resList[i].resolution === 1080 && resList[i].url) {
-                bestItem = resList[i];
-                break;
+    async init(ext) {
+        if (ext) {
+            if (typeof ext === 'string' && ext.indexOf('http') === 0) {
+                this.siteHost = ext.replace(/\/+$/, '');
+            } else if (typeof ext === 'object' && ext.site) {
+                this.siteHost = ext.site.replace(/\/+$/, '');
             }
         }
-        if (!bestItem) {
-            for (var j = 0; j < resList.length; j++) {
-                if (resList[j].resolution === 720 && resList[j].url) {
-                    bestItem = resList[j];
-                    break;
-                }
-            }
+    }
+
+    async httpReq(url, opt) {
+        opt = opt || {};
+        var method = (opt.method || 'GET').toUpperCase();
+        var headers = opt.headers || {};
+        if (!headers['User-Agent'] && !headers['user-agent']) {
+            headers['User-Agent'] = DEFAULT_UA;
         }
-        if (!bestItem) {
-            for (var k = 0; k < resList.length; k++) {
-                if (resList[k].url) {
-                    bestItem = resList[k];
-                    break;
-                }
-            }
+        if (!headers['Referer'] && !headers['referer']) {
+            headers['Referer'] = this.siteHost + '/';
         }
-        if (bestItem && bestItem.url) {
-            streamUrl = bestItem.url;
+        var rOpt = {
+            method: method,
+            headers: headers
+        };
+        if (opt.data) rOpt.data = opt.data;
+        if (opt.body) rOpt.body = opt.body;
+        if (opt.data && !rOpt.body && method === 'POST') {
+            rOpt.body = typeof opt.data === 'string' ? opt.data : JSON.stringify(opt.data);
+        }
+
+        try {
+            var res = await this.net.req(url, rOpt);
+            if (res && res.content) return res.content;
+            return '';
+        } catch (e) {
+            return '';
         }
     }
 
-    if (streamUrl) {
-        return JSON.stringify({
-            parse: 0,
-            playUrl: '',
-            url: streamUrl,
-            header: {
+    async signedApiReq(endpoint, params) {
+        params = params || {};
+        var timestamp = Date.now().toString();
+        var sign = apiSign(params, timestamp, this.signKey);
+
+        var queryParts = [];
+        var keys = Object.keys(params);
+        for (var i = 0; i < keys.length; i++) {
+            var k = keys[i];
+            if (params[k] !== undefined && params[k] !== null) {
+                queryParts.push(encodeURIComponent(k) + '=' + encodeURIComponent(params[k]));
+            }
+        }
+        var fullUrl = this.siteHost + this.apiPrefix + endpoint + (queryParts.length > 0 ? ('?' + queryParts.join('&')) : '');
+
+        var resp = await this.httpReq(fullUrl, {
+            headers: {
                 'User-Agent': DEFAULT_UA,
-                'Referer': siteHost + '/'
+                'Referer': this.siteHost + '/',
+                'Accept': 'application/json, text/plain, */*',
+                'deviceId': this.deviceId,
+                'authorization': '',
+                'sign': sign,
+                't': timestamp
             }
         });
-    }
 
-    // Fallback if not found
-    return JSON.stringify({
-        parse: 0,
-        playUrl: '',
-        url: '',
-        header: {
-            'User-Agent': DEFAULT_UA,
-            'Referer': siteHost + '/'
-        }
-    });
-}
-
-/**
- * Lifecycle: search
- */
-function search(wd, quick, pg) {
-    pg = parseInt(pg, 10) || 1;
-    var res = signedApiReq('/anonymous/video/searchByWordPageable', {
-        keyword: wd || '',
-        pageNum: '' + pg,
-        pageSize: '20'
-    });
-
-    var list = [];
-    if (res && res.data && res.data.list) {
-        var rawList = res.data.list;
-        for (var i = 0; i < rawList.length; i++) {
-            var item = rawList[i];
-            list.push({
-                vod_id: '' + item.vodId,
-                vod_name: item.vodName,
-                vod_pic: item.vodPic || '',
-                vod_remarks: item.vodRemarks || item.vodVersion || ''
-            });
+        if (!resp) return null;
+        try {
+            return JSON.parse(resp);
+        } catch (e) {
+            return null;
         }
     }
 
-    var hasMore = list.length >= 20;
-    var pageCount = hasMore ? (pg + 1) : pg;
+    async homeContent(filter) {
+        return {
+            class: categoryClasses,
+            filters: {}
+        };
+    }
 
-    return JSON.stringify({
-        page: pg,
-        pagecount: pageCount,
-        limit: list.length,
-        total: list.length,
-        list: list
-    });
+    async homeVideoContent() {
+        var res = await this.signedApiReq('/anonymous/video/list', {
+            type1: '1',
+            pageNum: '1',
+            pageSize: '24'
+        });
+
+        var list = [];
+        if (res && res.data && res.data.list) {
+            var rawList = res.data.list;
+            for (var i = 0; i < rawList.length; i++) {
+                var item = rawList[i];
+                list.push({
+                    vod_id: '' + item.vodId,
+                    vod_name: item.vodName,
+                    vod_pic: item.vodPic || '',
+                    vod_remarks: item.vodRemarks || item.vodVersion || ''
+                });
+            }
+        }
+
+        return {
+            list: list
+        };
+    }
+
+    async categoryContent(tid, pg, filter, extend) {
+        pg = parseInt(pg, 10) || 1;
+        var res = await this.signedApiReq('/anonymous/video/list', {
+            type1: '' + tid,
+            pageNum: '' + pg,
+            pageSize: '24'
+        });
+
+        var list = [];
+        if (res && res.data && res.data.list) {
+            var rawList = res.data.list;
+            for (var i = 0; i < rawList.length; i++) {
+                var item = rawList[i];
+                list.push({
+                    vod_id: '' + item.vodId,
+                    vod_name: item.vodName,
+                    vod_pic: item.vodPic || '',
+                    vod_remarks: item.vodRemarks || item.vodVersion || ''
+                });
+            }
+        }
+
+        var hasMore = list.length >= 20;
+        var pageCount = hasMore ? (pg + 1) : pg;
+
+        return {
+            page: pg,
+            pagecount: pageCount,
+            limit: list.length,
+            total: pageCount * list.length,
+            list: list
+        };
+    }
+
+    async detailContent(ids) {
+        var id = Array.isArray(ids) ? ids[0] : ids;
+        var cleanId = ('' + id).replace(/[^0-9]/g, '');
+        var res = await this.signedApiReq('/anonymous/video/detail', {
+            id: cleanId
+        });
+
+        if (!res || !res.data) {
+            return { list: [] };
+        }
+
+        var data = res.data;
+        var epList = data.episodeList || [];
+        var episodes = [];
+
+        for (var i = 0; i < epList.length; i++) {
+            var ep = epList[i];
+            var epName = ep.name || ('第' + (i + 1) + '集');
+            var nid = ep.nid || '';
+            episodes.push(epName + '$' + cleanId + '*' + nid);
+        }
+
+        var vod = {
+            vod_id: cleanId,
+            vod_name: data.vodName || '',
+            vod_pic: data.vodPic || '',
+            type_name: data.typeName || '',
+            vod_year: '' + (data.vodYear || ''),
+            vod_area: data.vodArea || '',
+            vod_remarks: data.vodRemarks || data.vodVersion || '',
+            vod_actor: data.vodActor || '',
+            vod_director: data.vodDirector || '',
+            vod_content: (data.vodContent || '').replace(/<[^>]+>/g, '').trim(),
+            vod_play_from: '金牌专线',
+            vod_play_url: episodes.join('#')
+        };
+
+        return {
+            list: [vod]
+        };
+    }
+
+    async playerContent(flag, id, flags) {
+        var cleanId = '';
+        var nid = '';
+
+        if (id.indexOf('*') !== -1) {
+            var parts = id.split('*');
+            cleanId = parts[0];
+            nid = parts[1];
+        } else {
+            cleanId = id;
+        }
+
+        var res = await this.signedApiReq('/anonymous/v2/video/episode/url', {
+            clientType: '1',
+            id: cleanId,
+            nid: nid
+        });
+
+        var streamUrl = '';
+        if (res && res.data && res.data.list && res.data.list.length > 0) {
+            var resList = res.data.list;
+            var bestItem = null;
+            for (var i = 0; i < resList.length; i++) {
+                if (resList[i].resolution === 1080 && resList[i].url) {
+                    bestItem = resList[i];
+                    break;
+                }
+            }
+            if (!bestItem) {
+                for (var j = 0; j < resList.length; j++) {
+                    if (resList[j].resolution === 720 && resList[j].url) {
+                        bestItem = resList[j];
+                        break;
+                    }
+                }
+            }
+            if (!bestItem) {
+                for (var k = 0; k < resList.length; k++) {
+                    if (resList[k].url) {
+                        bestItem = resList[k];
+                        break;
+                    }
+                }
+            }
+            if (bestItem && bestItem.url) {
+                streamUrl = bestItem.url;
+            }
+        }
+
+        if (streamUrl) {
+            return {
+                parse: 0,
+                playUrl: '',
+                url: streamUrl,
+                header: {
+                    'User-Agent': DEFAULT_UA,
+                    'Referer': this.siteHost + '/'
+                }
+            };
+        }
+
+        return {
+            parse: 0,
+            playUrl: '',
+            url: '',
+            header: {
+                'User-Agent': DEFAULT_UA,
+                'Referer': this.siteHost + '/'
+            }
+        };
+    }
+
+    async searchContent(wd, quick, pg = '1') {
+        pg = parseInt(pg, 10) || 1;
+        var res = await this.signedApiReq('/anonymous/video/searchByWordPageable', {
+            keyword: wd || '',
+            pageNum: '' + pg,
+            pageSize: '20'
+        });
+
+        var list = [];
+        if (res && res.data && res.data.list) {
+            var rawList = res.data.list;
+            for (var i = 0; i < rawList.length; i++) {
+                var item = rawList[i];
+                list.push({
+                    vod_id: '' + item.vodId,
+                    vod_name: item.vodName,
+                    vod_pic: item.vodPic || '',
+                    vod_remarks: item.vodRemarks || item.vodVersion || ''
+                });
+            }
+        }
+
+        var hasMore = list.length >= 20;
+        var pageCount = hasMore ? (pg + 1) : pg;
+
+        return {
+            page: pg,
+            pagecount: pageCount,
+            limit: list.length,
+            total: list.length,
+            list: list
+        };
+    }
 }
-
-// Aliases for TVBox naming conventions
-var homeContent = home;
-var homeVideoContent = homeVod;
-var categoryContent = category;
-var detailContent = detail;
-var playerContent = play;
-var searchContent = search;
-
-// Global exposure for non-ESM QuickJS loaders
-if (typeof globalThis !== 'undefined') {
-    globalThis.init = init;
-    globalThis.home = home;
-    globalThis.homeContent = homeContent;
-    globalThis.homeVod = homeVod;
-    globalThis.homeVideoContent = homeVideoContent;
-    globalThis.category = category;
-    globalThis.categoryContent = categoryContent;
-    globalThis.detail = detail;
-    globalThis.detailContent = detailContent;
-    globalThis.play = play;
-    globalThis.playerContent = playerContent;
-    globalThis.search = search;
-    globalThis.searchContent = searchContent;
-}
-
-// Default export for FongMi QuickJS ES Module
-export default {
-    init: init,
-    home: home,
-    homeContent: homeContent,
-    homeVod: homeVod,
-    homeVideoContent: homeVideoContent,
-    category: category,
-    categoryContent: categoryContent,
-    detail: detail,
-    detailContent: detailContent,
-    play: play,
-    playerContent: playerContent,
-    search: search,
-    searchContent: searchContent
-};
-
-export {
-    init,
-    home,
-    homeContent,
-    homeVod,
-    homeVideoContent,
-    category,
-    categoryContent,
-    detail,
-    detailContent,
-    play,
-    playerContent,
-    search,
-    searchContent
-};
