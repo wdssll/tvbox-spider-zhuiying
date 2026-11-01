@@ -337,6 +337,10 @@ export default class NnyySpider extends Spider {
         };
     }
 
+    async play(flag, id, flags) {
+        return await this.playerContent(flag, id, flags);
+    }
+
     async searchContent(wd, quick, pg = '1') {
         pg = parseInt(pg, 10) || 1;
         var searchUrl = this.siteHost + '/search.html?wd=' + encodeURIComponent(wd || '');
