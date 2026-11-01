@@ -577,22 +577,26 @@ export default class GazeSpider extends Spider {
             } catch (pe) {}
         }
 
-        if (!streamUrl) {
+        if (streamUrl) {
             return {
                 parse: 0,
-                url: ''
+                playUrl: '',
+                url: streamUrl,
+                header: {
+                    'User-Agent': DEFAULT_UA,
+                    'Referer': this.siteHost + '/'
+                }
             };
         }
 
         return {
             parse: 0,
-            playUrl: '',
-            url: streamUrl,
-            header: {
-                'User-Agent': DEFAULT_UA,
-                'Referer': this.siteHost + '/'
-            }
+            url: ''
         };
+    }
+
+    async play(flag, id, vipFlags) {
+        return await this.playerContent(flag, id, vipFlags);
     }
 
     async searchContent(wd, quick, pg = '1') {
