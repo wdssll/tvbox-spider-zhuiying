@@ -15,6 +15,9 @@
 | `nnyy` | **努努影院** | [nnyy.in](https://nnyy.in) | `nnyy.js` | 极速直连，量子/万佳/暴风多线路 1080P 高清 m3u8，免密直解秒开 |
 | `ffzy` | **非凡资源** | [ffzy5.tv](https://ffzy5.tv) | 原生 MacCMS API (`type: 1`) | 9.8万+片源库，原生采集接口直连，1080P 高清 ffm3u8 切片极速直链 |
 | `lzzy` | **量子资源** | [cj.lziapi.com](http://cj.lziapi.com) | 原生 MacCMS API (`type: 1`) | 16万+海量片源，原生采集接口直连，lzm3u8 极速切片直链 |
+| `bfzy` | **暴风资源** | [bfzyapi.com](https://bfzyapi.com) | 原生 MacCMS API (`type: 1`) | 17万+超大片库，泰剧/日韩综艺齐全，bfzym3u8 纯净极速直链 |
+| `hhzy` | **豪华资源** | [hhzyapi.com](https://hhzyapi.com) | 原生 MacCMS API (`type: 1`) | 11.7万+片源，140ms 极速响应，收录足球/CBA 体育赛事及常规影视 |
+| `jszy` | **极速资源** | [jszyapi.com](https://jszyapi.com) | 原生 MacCMS API (`type: 1`) | 11.6万+片源，短剧与动漫资源丰富，jsm3u8 极速切片直链 |
 
 ---
 
