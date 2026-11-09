@@ -14,6 +14,7 @@
 | `jinpai` | **金牌影院** | [vv3nwjk.com](https://vv3nwjk.com) | `jinpai.js` | 蓝光原画专线，SHA1(MD5()) 签名直链输出 1080P/720P 多码率 m3u8 |
 | `nnyy` | **努努影院** | [nnyy.in](https://nnyy.in) | `nnyy.js` | 极速直连，量子/万佳/暴风多线路 1080P 高清 m3u8，免密直解秒开 |
 | `ffzy` | **非凡资源** | [ffzy5.tv](https://ffzy5.tv) | 原生 MacCMS API (`type: 1`) | 9.8万+片源库，原生采集接口直连，1080P 高清 ffm3u8 切片极速直链 |
+| `lzzy` | **量子资源** | [cj.lziapi.com](http://cj.lziapi.com) | 原生 MacCMS API (`type: 1`) | 16万+海量片源，原生采集接口直连，lzm3u8 极速切片直链 |
 
 ---
 
